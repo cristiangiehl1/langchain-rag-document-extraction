@@ -1,27 +1,26 @@
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/huggingface_transformers";
-import type { PretrainedOptions } from "@huggingface/transformers";
+import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { CONFIG } from "@/lib/config";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("model");
 
 /**
- * Wraps the local transformers.js embedding model (runs on the server, no external API).
- * Lazy singleton: the model is loaded once and reused across requests.
+ * Wraps the HuggingFace Inference API embedding model (remote call, no local
+ * model download — serverless-friendly). Lazy singleton: the client is created
+ * once and reused across requests.
  */
 export class EmbeddingsService {
   private static instance: EmbeddingsService | null = null;
 
-  readonly embeddings: HuggingFaceTransformersEmbeddings;
+  readonly embeddings: HuggingFaceInferenceEmbeddings;
 
   private constructor() {
-    log.info("initializing local embedding model", {
+    log.info("using HuggingFace Inference embeddings", {
       model: CONFIG.embedding.model,
     });
-    this.embeddings = new HuggingFaceTransformersEmbeddings({
+    this.embeddings = new HuggingFaceInferenceEmbeddings({
+      apiKey: CONFIG.embedding.apiKey,
       model: CONFIG.embedding.model,
-      pretrainedOptions: CONFIG.embedding
-        .pretrainedOptions as PretrainedOptions,
     });
   }
 

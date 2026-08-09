@@ -1,10 +1,12 @@
--- Runs automatically on first container start (empty data volume).
--- Enables pgvector and creates the schema used by LangChain's PGVectorStore.
+-- Supabase schema for the vector store.
+-- Run once in the Supabase dashboard: SQL Editor > New query > paste > Run.
+-- Mirrors db/init/01-init.sql (used by the local Docker Postgres).
 
-CREATE EXTENSION IF NOT EXISTS vector;
+-- pgvector lives in the "extensions" schema on Supabase.
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
--- Table layout matches the column names configured in src/lib/config.ts.
--- The embedding model produces 384-dimensional embeddings.
+-- Table layout matches the columns configured in src/lib/config.ts.
+-- The embedding model produces 384-dimensional vectors.
 CREATE TABLE IF NOT EXISTS embeddings (
     id       uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     content  text,

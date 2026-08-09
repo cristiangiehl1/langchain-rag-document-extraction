@@ -29,12 +29,12 @@ export class VectorStoreRepository {
 
   private connectionConfig(): PoolConfig {
     const connectionString = CONFIG.postgres.connectionString;
-    if (!connectionString) {
-      throw new Error(
-        "DATABASE_URL is not set. Copy .env.example to .env and start the DB with `npm run db:up`.",
-      );
-    }
-    return { connectionString };
+    // Local Docker Postgres has no TLS; managed Postgres (Supabase) requires it.
+    const isLocal = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString);
+    return {
+      connectionString,
+      ssl: isLocal ? undefined : { rejectUnauthorized: false },
+    };
   }
 
   private getStore(): Promise<PGVectorStore> {

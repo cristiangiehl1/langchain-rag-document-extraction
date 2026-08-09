@@ -8,7 +8,8 @@ import type { ChatOpenAI } from "@langchain/openai";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+// Vercel Hobby caps function duration at 60s.
+export const maxDuration = 60;
 
 const log = createLogger("chat");
 

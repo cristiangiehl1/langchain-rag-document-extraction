@@ -11,5 +11,5 @@ npm-debug.log*
 next-env.d.ts
 # TypeScript incremental build cache
 *.tsbuildinfo
-# transformers.js model cache
-.cache
+# Playwright MCP artifacts
+.playwright-mcp

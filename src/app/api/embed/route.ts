@@ -6,8 +6,9 @@ import type { EmbedResponse } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
-// Embedding a large document can take a while on first model load.
-export const maxDuration = 300;
+// Vercel Hobby caps function duration at 60s. Very large documents may need to be
+// ingested in smaller batches (or a Pro plan, which allows up to 300s).
+export const maxDuration = 60;
 
 const log = createLogger("embed");
 
