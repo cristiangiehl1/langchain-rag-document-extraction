@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { VectorStoreRepository } from "@/server/vector-store-repository";
-import { RagService } from "@/server/rag-service";
+import { ChatService } from "@/server/chat-service";
 import { chatSchema, firstIssue } from "@/lib/schemas";
 import { META_DELIM, ERROR_DELIM } from "@/lib/stream";
 import type { ChatSource } from "@/lib/types";
@@ -21,16 +21,16 @@ export async function POST(req: Request) {
   }
 
   const { question, retrieval, generation } = parsed.data;
-  const rag = new RagService(VectorStoreRepository.getInstance());
+  const chat = new ChatService(VectorStoreRepository.getInstance());
 
-  // Retrieval + model build happen up front so pre-stream errors return clean JSON
-  // and the sources can be sent before the first token.
+  // Retrieval + client build happen up front so pre-stream errors return clean JSON
+  // and the sources can be sent before the first token. Neither calls the LLM yet.
   let sources: ChatSource[];
-  let model: ChatOpenAI;
+  let chatClient: ChatOpenAI;
   let usedParams: string[];
   try {
-    sources = await rag.retrieve(question, retrieval);
-    ({ model, usedParams } = rag.createModel(generation));
+    sources = await chat.retrieve(question, retrieval);
+    ({ client: chatClient, usedParams } = chat.createChatClient(generation));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Retrieval failed.";
     log.error("pre-stream failed", { message });
@@ -39,14 +39,14 @@ export async function POST(req: Request) {
   log.info("streaming answer", { sources: sources.length });
 
   const encoder = new TextEncoder();
-  const metadata = JSON.stringify({ sources, model: rag.model, usedParams });
+  const metadata = JSON.stringify({ sources, model: chat.modelName, usedParams });
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       controller.enqueue(encoder.encode(metadata + META_DELIM));
       try {
-        for await (const token of rag.stream(
-          model,
+        for await (const token of chat.streamAnswer(
+          chatClient,
           question,
           sources.map((s) => ({ index: s.index, content: s.content })),
           generation,

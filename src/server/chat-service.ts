@@ -17,11 +17,12 @@ import { buildRagPrompt } from "@/lib/prompt/prompt-builder";
 const log = createLogger("rag");
 
 /**
- * Retrieval-augmented generation: queries the vector store for context and
+ * Powers the /api/chat endpoint: answers a question about the ingested documents.
+ * Uses retrieval-augmented generation — queries the vector store for context and
  * streams an answer from the OpenRouter chat model. The question comes from the
  * frontend, so the chain is assembled directly (no RunnableSequence / prompt files).
  */
-export class RagService {
+export class ChatService {
   constructor(private readonly repo: VectorStoreRepository) {}
 
   /** Retrieves the most similar chunks and maps them to UI-facing sources. */
@@ -67,16 +68,19 @@ export class RagService {
     return sources;
   }
 
-  get model(): string {
+  /** The model identifier (e.g. "google/gemma-...") — a string, not the client. */
+  get modelName(): string {
     return CONFIG.openRouter.model;
   }
 
   /**
    * Builds a streaming ChatOpenAI client pointed at OpenRouter, including ONLY the
    * generation params the user actually set (so unsupported values are never sent).
-   * Throws if the API key is missing. Returns the applied params for UI transparency.
+   * Does NOT call the LLM — it only prepares the client (the network call happens
+   * later, in streamAnswer). Throws if the API key is missing. Returns the applied
+   * params for UI transparency.
    */
-  createModel(gen: GenerationConfig): { model: ChatOpenAI; usedParams: string[] } {
+  createChatClient(gen: GenerationConfig): { client: ChatOpenAI; usedParams: string[] } {
     if (!CONFIG.openRouter.apiKey) {
       throw new Error("OPENROUTER_API_KEY is not set. Add it to your .env file.");
     }
@@ -129,7 +133,7 @@ export class RagService {
       model: CONFIG.openRouter.model,
       params: used.length ? used.join(",") : "(defaults)",
     });
-    return { model: new ChatOpenAI(fields), usedParams: used };
+    return { client: new ChatOpenAI(fields), usedParams: used };
   }
 
   private buildMessages(
@@ -159,18 +163,23 @@ export class RagService {
     ];
   }
 
-  /** Streams the answer token-by-token from a prepared model. */
-  async *stream(
-    model: ChatOpenAI,
+  /**
+   * Streams the answer token-by-token. This is where the LLM is actually called:
+   * `client.stream(messages)` opens the request to OpenRouter and yields each
+   * token as it arrives. A generator so the caller consumes tokens one at a time.
+   */
+  async *streamAnswer(
+    client: ChatOpenAI,
     question: string,
     sources: Pick<ChatSource, "index" | "content">[],
     gen: GenerationConfig,
   ): AsyncGenerator<string> {
     const end = log.timer("generation stream");
-    const stream = await model.stream(this.buildMessages(question, sources, gen));
+    // >>> The actual LLM call: sends the prompt and returns a token stream. <<<
+    const llmStream = await client.stream(this.buildMessages(question, sources, gen));
     let tokens = 0;
     let chars = 0;
-    for await (const chunk of stream) {
+    for await (const chunk of llmStream) {
       const c = chunk.content;
       if (typeof c === "string" && c.length > 0) {
         tokens += 1;
