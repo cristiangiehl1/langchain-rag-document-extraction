@@ -12,13 +12,9 @@ import type {
 } from "@/lib/types";
 import type { VectorStoreRepository } from "./vector-store-repository";
 import { createLogger } from "@/lib/logger";
+import { buildRagPrompt } from "@/lib/prompt/prompt-builder";
 
 const log = createLogger("rag");
-
-const DEFAULT_SYSTEM_PROMPT =
-  "You are a retrieval-augmented assistant. Answer the user's question using ONLY the provided context. " +
-  "If the answer is not contained in the context, say you don't know based on the documents. " +
-  "Be concise and cite which context snippets you used by their [#] number.";
 
 /**
  * Retrieval-augmented generation: queries the vector store for context and
@@ -144,13 +140,22 @@ export class RagService {
     const contextBlock =
       sources.length > 0
         ? sources.map((s) => `[${s.index}] ${s.content}`).join("\n\n")
-        : "(no relevant context was retrieved)";
+        : "(nenhum contexto relevante foi recuperado)";
 
+    // A free-text system prompt from the UI overrides the structured prompt.
+    if (gen.systemPrompt?.trim()) {
+      return [
+        new SystemMessage(gen.systemPrompt),
+        new HumanMessage(`Context:\n${contextBlock}\n\nQuestion: ${question}`),
+      ];
+    }
+
+    // Default: render the structured promptConfig + template (persona, rules,
+    // context and question in one message).
     return [
-      new SystemMessage(
-        gen.systemPrompt?.trim() ? gen.systemPrompt : DEFAULT_SYSTEM_PROMPT,
+      new HumanMessage(
+        buildRagPrompt({ context: contextBlock, question }),
       ),
-      new HumanMessage(`Context:\n${contextBlock}\n\nQuestion: ${question}`),
     ];
   }
 
