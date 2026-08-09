@@ -45,7 +45,7 @@ export function ConfigPanel({ form }: Props) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full w-full min-w-0 flex-col">
       <div className="flex items-center justify-between px-4 h-12 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Sliders className="size-4 text-accent" /> Configuração
