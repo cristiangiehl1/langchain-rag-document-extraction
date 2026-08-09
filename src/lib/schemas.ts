@@ -36,7 +36,6 @@ export const generationConfigSchema = z.object({
   maxTokens: z.coerce.number().int().min(1).max(32_000).default(1024),
   frequencyPenalty: z.coerce.number().min(-2).max(2).default(0),
   presencePenalty: z.coerce.number().min(-2).max(2).default(0),
-  seed: z.coerce.number().int().min(0).nullable().default(null),
   systemPrompt: z.string().max(8_000).default(""),
 });
 

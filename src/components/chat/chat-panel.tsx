@@ -257,6 +257,14 @@ function MessageBubble({ message }: { message: Message }) {
       </div>
 
       <div className={cn("min-w-0 flex-1 space-y-2", isUser && "flex flex-col items-end")}>
+        {!isUser && message.sources && message.sources.length > 0 ? (
+          <Sources sources={message.sources} />
+        ) : !isUser && message.sources && !message.streaming ? (
+          <p className="text-[11px] text-warning">
+            Nenhum chunk recuperado — o banco está vazio ou nada passou no limiar.
+          </p>
+        ) : null}
+
         <div
           className={cn(
             "inline-block max-w-full rounded-lg border px-3.5 py-2.5 text-sm leading-relaxed",
@@ -299,13 +307,6 @@ function MessageBubble({ message }: { message: Message }) {
           </div>
         ) : null}
 
-        {!isUser && message.sources && message.sources.length > 0 ? (
-          <Sources sources={message.sources} />
-        ) : !isUser && message.sources && !message.streaming ? (
-          <p className="text-[11px] text-warning">
-            Nenhum chunk recuperado — o banco está vazio ou nada passou no limiar.
-          </p>
-        ) : null}
       </div>
     </div>
   );

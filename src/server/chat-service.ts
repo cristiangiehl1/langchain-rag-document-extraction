@@ -12,9 +12,9 @@ import type {
 } from "@/lib/types";
 import type { VectorStoreRepository } from "./vector-store-repository";
 import { createLogger } from "@/lib/logger";
-import { buildRagPrompt } from "@/lib/prompt/prompt-builder";
+import { buildChatPrompt } from "@/lib/prompt/prompt-builder";
 
-const log = createLogger("rag");
+const log = createLogger("chat");
 
 /**
  * Powers the /api/chat endpoint: answers a question about the ingested documents.
@@ -77,14 +77,9 @@ export class ChatService {
    * Builds a streaming ChatOpenAI client pointed at OpenRouter, including ONLY the
    * generation params the user actually set (so unsupported values are never sent).
    * Does NOT call the LLM — it only prepares the client (the network call happens
-   * later, in streamAnswer). Throws if the API key is missing. Returns the applied
-   * params for UI transparency.
+   * later, in streamAnswer). Returns the applied params for UI transparency.
    */
   createChatClient(gen: GenerationConfig): { client: ChatOpenAI; usedParams: string[] } {
-    if (!CONFIG.openRouter.apiKey) {
-      throw new Error("OPENROUTER_API_KEY is not set. Add it to your .env file.");
-    }
-
     const used: string[] = [];
     const modelKwargs: Record<string, unknown> = {};
     const fields: ChatOpenAIFields = {
@@ -123,10 +118,6 @@ export class ChatService {
       modelKwargs.top_k = gen.topK;
       used.push("top_k");
     }
-    if (gen.seed !== null && Number.isFinite(gen.seed)) {
-      modelKwargs.seed = gen.seed;
-      used.push("seed");
-    }
     if (Object.keys(modelKwargs).length > 0) fields.modelKwargs = modelKwargs;
 
     log.info("chat model ready", {
@@ -154,13 +145,10 @@ export class ChatService {
       ];
     }
 
-    // Default: render the structured promptConfig + template (persona, rules,
-    // context and question in one message).
-    return [
-      new HumanMessage(
-        buildRagPrompt({ context: contextBlock, question }),
-      ),
-    ];
+    // Default: structured prompt with proper roles — persona/rules as the system
+    // message, context and question as the human message.
+    const { system, human } = buildChatPrompt({ context: contextBlock, question });
+    return [new SystemMessage(system), new HumanMessage(human)];
   }
 
   /**

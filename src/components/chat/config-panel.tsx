@@ -232,23 +232,6 @@ export function ConfigPanel({ form }: Props) {
             )}
           />
 
-          <Controller
-            control={control}
-            name="generation.seed"
-            render={({ field }) => (
-              <ToggleNumberRow
-                label="seed (reprodutibilidade)"
-                hint="Fixa a semente de amostragem para respostas reproduzíveis. Desligado = não enviado."
-                value={field.value}
-                fallback={42}
-                min={0}
-                max={2 ** 31 - 1}
-                step={1}
-                onChange={field.onChange}
-              />
-            )}
-          />
-
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Label>system prompt</Label>

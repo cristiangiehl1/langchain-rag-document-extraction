@@ -45,7 +45,6 @@ const scopeColors: Record<string, (t: string) => string> = {
   embed: c.magenta,
   store: c.yellow,
   model: c.magenta,
-  rag: c.green,
   chat: c.green,
   stats: c.gray,
   vectors: c.gray,

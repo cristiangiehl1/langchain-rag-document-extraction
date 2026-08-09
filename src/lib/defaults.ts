@@ -13,7 +13,6 @@ export const DEFAULT_GENERATION: GenerationConfig = {
   maxTokens: 1024,
   frequencyPenalty: 0,
   presencePenalty: 0,
-  seed: null,
   systemPrompt: "",
 };
 

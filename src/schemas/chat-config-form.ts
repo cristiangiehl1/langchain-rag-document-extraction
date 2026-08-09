@@ -18,7 +18,6 @@ export const generationFormSchema = z.object({
   maxTokens: z.number().int().min(1).max(32_000),
   frequencyPenalty: z.number().min(-2).max(2),
   presencePenalty: z.number().min(-2).max(2),
-  seed: z.number().int().min(0).nullable(),
   systemPrompt: z.string().max(8_000),
 });
 

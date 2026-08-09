@@ -51,7 +51,6 @@ export interface GenerationConfig {
   maxTokens: number;
   frequencyPenalty: number;
   presencePenalty: number;
-  seed: number | null;
   systemPrompt: string;
 }
 
