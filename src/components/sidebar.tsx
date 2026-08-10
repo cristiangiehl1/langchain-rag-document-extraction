@@ -53,9 +53,9 @@ export function Sidebar() {
 
       <div className="mt-auto p-3 border-t border-border">
         <p className="text-[10px] leading-relaxed text-muted font-mono">
-          Embeddings locais
+          Embeddings remotos (HuggingFace)
           <br />
-          all-MiniLM-L6-v2 · 384d
+          paraphrase-multilingual-MiniLM-L12-v2 · 384d
         </p>
       </div>
     </aside>
